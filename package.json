@@ -1,0 +1,22 @@
+{
+  "name": "blockrusher",
+  "version": "1.0.0",
+  "description": "",
+  "main": "Rusher.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Holymir/Rusher.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Holymir/Rusher/issues"
+  },
+  "homepage": "https://github.com/Holymir/Rusher#readme",
+  "dependencies": {
+    "ethers": "^3.0.25",
+  }
+}
