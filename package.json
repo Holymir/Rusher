@@ -1,0 +1,27 @@
+{
+  "name": "rusher",
+  "version": "1.0.0",
+  "description": "",
+  "main": "Rusher.js",
+  "scripts": {
+    "start": "node rusher.js",
+    "debug": "node --inspect rusher.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Holymir/Rusher.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Holymir/Rusher/issues"
+  },
+  "homepage": "https://github.com/Holymir/Rusher#readme",
+  "dependencies": {
+    "@warren-bank/ethereumjs-tx-sign": "^2.0.0",
+    "ethereumjs-util": "^5.2.0",
+    "ethjs-util": "^0.1.6",
+    "request": "^2.87.0"
+  }
+}

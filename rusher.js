@@ -2,7 +2,7 @@ const ethers = require('ethers');
 const {unsign} = require('@warren-bank/ethereumjs-tx-sign');
 var request = require('request');
 
-let lastBlock = 5932378;
+let lastBlock = 5932350;
 
 class Block {
     constructor(id, count, addresses) {
