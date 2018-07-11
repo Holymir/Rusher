@@ -2,7 +2,7 @@ const ethers = require('ethers');
 const {unsign} = require('@warren-bank/ethereumjs-tx-sign');
 var request = require('request');
 
-let lastBlock = 5932350;
+var url;
 
 class Block {
     constructor(id, count, addresses) {
@@ -24,47 +24,74 @@ function send(block) {
     let requestBody = JSON.stringify(block);
     console.log(requestBody);
     request.post({
-        url: 'https://a3f4a9af.ngrok.io/blocks',
+        url: url,
         body: block,
-        json: true
+        json: true,
+        keepAlive: true
     });
 }
 
-async function rusher() {
+function rusher(blockId, provider) {
     console.log("Rush");
+    provider.getBlock(blockId).then(function (block) {
+        console.log("Block Number: " + blockId);
 
-    let providers = ethers.providers;
-    let provider = providers.getDefaultProvider('mainnet');
-
-    for (i = lastBlock; i > 0; i--) {
-        var addresses = [];
-        var keys = [];
-        console.log("Block Number: " + i);
-        let block = await provider.getBlock(i);
         let transactions = block.transactions;
 
         console.log("Transactions: " + transactions.length);
 
+        let promises = [];
+        let addresses = [];
         for (let j = 0; j < transactions.length; j++) {
-            let transaction = await provider.getTransaction(transactions[j]);
-            let rawMessage = transaction.raw;
-            let {publicKey, address} = unsign(rawMessage);
+            promises.push(
+                new Promise(function (resolve, reject) {
+                    provider.getTransaction(transactions[j])
+                        .then(function (transaction) {
+                            let rawMessage = transaction.raw;
+                            let {publicKey, address} = unsign(rawMessage);
 
-            let balance = await provider.getBalance(address);
-            if (balance.toString() === "0") {
-                continue;
-            }
-
-            let entry = new Address(publicKey, address, balance.toString());
-
-            if (!keys.includes(publicKey)) {
-                keys.push(publicKey);
-                addresses.push(entry);
-            }
+                            return new Promise(function (resolve, reject) {
+                                let entry = new Address(publicKey, address, 0);
+                                resolve(entry);
+                            });
+                        })
+                        .then(function (entry) {
+                            return new Promise(function (resolve, reject) {
+                                provider.getBalance(entry.address).then(function (balance) {
+                                    entry.amount = balance.toString();
+                                    resolve(entry)
+                                });
+                            })
+                        })
+                        .then(function (entry) {
+                            addresses.push(entry);
+                            resolve(entry);
+                        });
+                }))
         }
 
-        send(new Block(i, addresses.length, addresses));
-    }
+        Promise.all(promises).then(function (addresses) {
+            addresses = addresses.filter(address => address.amount !== "0");
+            send(new Block(blockId, addresses.length, addresses));
+        });
+    }).catch(console.log);
 }
 
-rusher();
+function run() {
+    let providers = ethers.providers;
+    let provider = providers.getDefaultProvider('mainnet');
+
+    url = process.argv[2];
+    if (url === undefined) {
+        throw new Error('Collector url was not provided!');
+    }
+
+    let blockId = parseInt(process.argv[3]);
+    if (blockId !== undefined && !Number.isInteger(blockId)) {
+        throw new Error('Not a valid block number was provided!');
+    }
+
+    rusher(blockId, provider);
+}
+
+run();
