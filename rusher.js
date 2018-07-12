@@ -87,17 +87,14 @@ async function run() {
 
     url = process.argv[2];
     if (url === undefined) {
-        throw new Error('Collector url was not provided!');
+        throw new Error('Collector url was not provided! ' +
+            'URL should be provided as first argument.');
     }
 
     let blockId = parseInt(process.argv[3]);
     if (blockId !== undefined && !Number.isInteger(blockId)) {
-        throw new Error('Not a valid block number was provided!');
-    }
-
-    let threads = parseInt(process.argv[4]);
-    if (blockId !== undefined && !Number.isInteger(threads)) {
-        throw new Error('Not a valid threads number was provided!');
+        throw new Error('Not a valid block number was provided!' +
+            'Start block number should be provided as second argument.');
     }
 
     while (true)
