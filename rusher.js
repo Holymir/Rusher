@@ -33,51 +33,55 @@ function send(block) {
 
 function rusher(blockId, provider) {
     console.log("Rush");
-    provider.getBlock(blockId).then(function (block) {
-        console.log("Block Number: " + blockId);
+    return new Promise(function (resolve, reject) {
+        provider.getBlock(blockId).then(function (block) {
+            console.log("Block Number: " + blockId);
 
-        let transactions = block.transactions;
+            let transactions = block.transactions;
 
-        console.log("Transactions: " + transactions.length);
+            console.log("Transactions: " + transactions.length);
 
-        let promises = [];
-        let addresses = [];
-        for (let j = 0; j < transactions.length; j++) {
-            promises.push(
-                new Promise(function (resolve, reject) {
-                    provider.getTransaction(transactions[j])
-                        .then(function (transaction) {
-                            let rawMessage = transaction.raw;
-                            let {publicKey, address} = unsign(rawMessage);
+            let promises = [];
+            let addresses = [];
+            for (let j = 0; j < transactions.length; j++) {
+                promises.push(
+                    new Promise(function (resolve, reject) {
+                        provider.getTransaction(transactions[j])
+                            .then(function (transaction) {
+                                let rawMessage = transaction.raw;
+                                let {publicKey, address} = unsign(rawMessage);
 
-                            return new Promise(function (resolve, reject) {
-                                let entry = new Address(publicKey, address, 0);
-                                resolve(entry);
-                            });
-                        })
-                        .then(function (entry) {
-                            return new Promise(function (resolve, reject) {
-                                provider.getBalance(entry.address).then(function (balance) {
-                                    entry.amount = balance.toString();
-                                    resolve(entry)
+                                return new Promise(function (resolve, reject) {
+                                    let entry = new Address(publicKey, address, 0);
+                                    resolve(entry);
                                 });
                             })
-                        })
-                        .then(function (entry) {
-                            addresses.push(entry);
-                            resolve(entry);
-                        });
-                }))
-        }
+                            .then(function (entry) {
+                                return new Promise(function (resolve, reject) {
+                                    provider.getBalance(entry.address).then(function (balance) {
+                                        entry.amount = balance.toString();
+                                        resolve(entry)
+                                    });
+                                })
+                            })
+                            .then(function (entry) {
+                                addresses.push(entry);
+                                resolve(entry);
+                            });
+                    }))
+            }
 
-        Promise.all(promises).then(function (addresses) {
-            addresses = addresses.filter(address => address.amount !== "0");
-            send(new Block(blockId, addresses.length, addresses));
+            Promise.all(promises).then(function (addresses) {
+                addresses = addresses.filter(address => address.amount !== "0");
+                send(new Block(blockId, addresses.length, addresses));
+            }).then(function () {
+                resolve();
+            });
         });
-    }).catch(console.log);
+    });
 }
 
-function run() {
+async function run() {
     let providers = ethers.providers;
     let provider = providers.getDefaultProvider('mainnet');
 
@@ -91,7 +95,15 @@ function run() {
         throw new Error('Not a valid block number was provided!');
     }
 
-    rusher(blockId, provider);
+    let threads = parseInt(process.argv[4]);
+    if (blockId !== undefined && !Number.isInteger(threads)) {
+        throw new Error('Not a valid threads number was provided!');
+    }
+
+    while (true)
+        await rusher(blockId--, provider);
 }
 
-run();
+run().then(function () {
+    console.log("Finished!")
+});
