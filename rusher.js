@@ -105,7 +105,7 @@ function run() {
 
 
     for (let i = 0; i < blockIds.length; i++) {
-        createJob(blockIds[i]--, provider);
+        createJob(blockIds[i], provider);
     }
 }
 
