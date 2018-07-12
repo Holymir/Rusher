@@ -75,13 +75,13 @@ function rusher(blockId, provider) {
                 addresses = addresses.filter(address => address.amount !== "0");
                 send(new Block(blockId, addresses.length, addresses));
             }).then(function () {
-                resolve();
+                resolve(blockId);
             });
         });
     });
 }
 
-async function run() {
+function run() {
     let providers = ethers.providers;
     let provider = providers.getDefaultProvider('mainnet');
 
@@ -91,16 +91,29 @@ async function run() {
             'URL should be provided as first argument.');
     }
 
-    let blockId = parseInt(process.argv[3]);
-    if (blockId !== undefined && !Number.isInteger(blockId)) {
-        throw new Error('Not a valid block number was provided!' +
-            'Start block number should be provided as second argument.');
+    let blockIds = [];
+
+    for (let i = 3; i < process.argv.length; i++) {
+        console.log(process.argv[i]);
+        let blockId = parseInt(process.argv[i]);
+        blockIds.push(blockId);
+        if (blockId !== undefined && !Number.isInteger(blockId)) {
+            throw new Error('Not a valid block number was provided!' +
+                'Start block numbers should be provided as whitespace separated list of integers.');
+        }
     }
 
-    while (true)
-        await rusher(blockId--, provider);
+
+    for (let i = 0; i < blockIds.length; i++) {
+        createJob(blockIds[i]--, provider);
+    }
 }
 
-run().then(function () {
-    console.log("Finished!")
-});
+function createJob(blockId, provider) {
+    rusher(blockId, provider)
+        .then(function (blockId) {
+            createJob(--blockId, provider)
+        });
+}
+
+run();
